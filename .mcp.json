@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "zep-docs": {
+      "type": "sse",
+      "url": "https://docs-mcp.getzep.com/sse"
+    }
+  }
+}

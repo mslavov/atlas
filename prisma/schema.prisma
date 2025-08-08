@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String       @id @default(cuid())
+  email           String       @unique
+  name            String?
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  connections     Connection[]
+  sessions        Session[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@index([organizationId])
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  users       User[]
+  connections Connection[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Connection {
+  id             String       @id @default(cuid())
+  provider       Provider
+  connectionId   String       @unique
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status         ConnectionStatus @default(ACTIVE)
+  metadata       Json?
+  lastSyncAt     DateTime?
+  syncJobs       SyncJob[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([provider, status])
+}
+
+model SyncJob {
+  id           String       @id @default(cuid())
+  syncId       String       @unique
+  connectionId String
+  connection   Connection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  status       SyncStatus
+  recordsProcessed Int     @default(0)
+  errors       Json?
+  startedAt    DateTime     @default(now())
+  completedAt  DateTime?
+  
+  @@index([connectionId])
+  @@index([status])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  Provider
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+enum Provider {
+  GITHUB
+  NOTION
+  JIRA
+  SLACK
+}
+
+enum ConnectionStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  EXPIRED
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
